@@ -17,6 +17,7 @@ class UserController extends Controller
     public function __construct()
     {
         $this->middleware('auth:api');
+      //  $this->authorize('isAdmin');
     }
 
     /**
@@ -26,7 +27,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        return User::latest()->paginate(10);
+        return User::latest()->paginate(5);
     }
 
     /**
@@ -142,11 +143,27 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
+         $this->authorize('isAdmin');
+
         $user = User::findOrFail($id);
         // delete the user
 
         $user->delete();
 
         return ['message' => 'User Deleted'];
+    }
+    public function search(){
+
+        if ($search = \Request::get('q')) {
+            $users = User::where(function($query) use ($search){
+                $query->where('name','LIKE',"%$search%")
+                        ->orWhere('email','LIKE',"%$search%");
+            })->paginate(20);
+        }else{
+            $users = User::latest()->paginate(5);
+        }
+
+        return $users;
+
     }
 }

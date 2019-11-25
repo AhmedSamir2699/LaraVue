@@ -1,6 +1,6 @@
 <template>
     <div class="container">
-        <div class="row mt-5">
+        <div class="row mt-5" v-if="$gate.isAdminOrAuthor()">
           <div class="col-md-12">
             <div class="card">
               <div class="card-header">
@@ -42,8 +42,15 @@
               </div>
               <!-- /.card-body -->
             </div>
+             <div class="card-footer">
+                  <pagination :data="users" @pagination-change-page="getResults"></pagination>
+              </div>
+
             <!-- /.card -->
           </div>
+        </div>
+        <div v-if="!$gate.isAdminOrAuthor()">
+            <not-found></not-found>
         </div>
          <!-- Modal -->
         <div class="modal fade" id="addNew" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -86,6 +93,7 @@
             <select v-model="form.type" type="text" name="type" id="type" class="form-control"
             :class="{ 'is-invalid': form.errors.has('type') }">
             <option value="">select user Role</option>
+            <option value="admin">Admin</option>
             <option value="author">Author</option>
             <option value="user">User</option>
             </select>
@@ -126,6 +134,12 @@
         },
         methods:
         {
+            getResults(page = 1) {
+                        axios.get('api/user?page=' + page)
+                            .then(response => {
+                                this.users = response.data;
+                            });
+                },
              updateUser(){
                 this.$Progress.start();
                 // console.log('Editing data');
@@ -133,7 +147,7 @@
                 .then(() => {
                     // success
                     $('#addNew').modal('hide');
-                     swal(
+                     swal.fire(
                         'Updated!',
                         'Information has been updated.',
                         'success'
@@ -170,7 +184,7 @@
 
                         // Send request to the server
                          if (result.value) {
-                                this.form.delete('api/user/16').then(()=>{
+                                this.form.delete('api/user/'+id).then(()=>{
                                         swal.fire(
                                         'Deleted!',
                                         'Your file has been deleted.',
@@ -185,7 +199,9 @@
             },
             loadUsers()
         {
-          axios.get("api/user").then(({ data }) => (this.users = data));
+          if(this.$gate.isAdminOrAuthor()){
+                    axios.get("api/user").then(({ data }) => (this.users = data));
+                }
         },
 
            CreateUser(){
